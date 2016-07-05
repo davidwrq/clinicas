@@ -2,17 +2,23 @@
 import scrapy
 from scrapy.spider import BaseSpider
 from ..items import ClinicasItem
+from scrapy.spiders import CrawlSpider, Rule
+from scrapy.contrib.linkextractors.sgml import SgmlLinkExtractor
 
 
-class ClinicasSpider(BaseSpider):
+
+
+class ClinicasSpider(CrawlSpider):
     name = "clin"
-    num_pag = 10
-    allowed_domains = ["http://www.mercantil.com"]
+    num_pag = 1
+    allowed_domains = ["www.mercantil.com"]
     main_url = "http://www.mercantil.com/rc/port_select_companies.asp?acti_code=7115&code2=&onlyweb=&sort=&branch=&location=&location2=&location3=&keywords=CLINICAS%20DENTALES&filter=&entrie=%W&lang=esp".replace('%W', str(num_pag))
     start_urls = [main_url]
+    rules = (Rule(SgmlLinkExtractor(allow=(), restrict_xpaths=('//div[@class="paginador"]//a[2]')), callback="parse_items", follow= True),)
     base_url = "http://www.mercantil.com"
 
-    def parse(self, response):
+
+    def parse_items(self, response):
         self.log("INICIANDO SCRAPER CLINICAS")
         form = response.xpath("//form[@name='Formulario']")
         urls = form.xpath("//table[@class='tablResul']//tr//td/a/@href").extract()
@@ -32,7 +38,7 @@ class ClinicasSpider(BaseSpider):
         item['rubro'] = "CLINICAS DENTALES"
         item['razon_social']= ficha.xpath("//h2/text()").extract()[0].strip()
         item['nombre_de_fantasia']= response.xpath('//*[@id="compLink"]/span/text()').extract()[0].strip()
-        item['telefono']= response.xpath("//td[@id='_telephone7']/text()").extract() , "TELEFONO"
+        item['telefono']= response.xpath("//td[@id='_telephone7']/text()").extract()
         item['contacto']= response.xpath("//div[@class='carruInfo']//table//tr//td[@class='w40p']//strong/text()").extract()
         item['rol']= response.xpath("//div[@class='carruInfo']//table//tr//em//spam/text()").extract()
         item['facebook']= response.xpath("//div[@id='fbdiv']//div/@data-href").extract()
